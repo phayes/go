@@ -244,11 +244,25 @@ func TestObjectIdentifier(t *testing.T) {
 			if !reflect.DeepEqual(test.out, ret) {
 				t.Errorf("#%d: Bad result: %v (expected %v)", i, ret, test.out)
 			}
+			oid, err := NewObjectIdentifier(ObjectIdentifier(ret).String())
+			if err != nil {
+				t.Errorf("#%d: Error parsing string output: %v", i, err)
+			}
+			if !ObjectIdentifier(ret).Equal(oid) {
+				t.Errorf("#%d: Bad string round-trip: %v", i, err)
+			}
 		}
 	}
 
 	if s := ObjectIdentifier([]int{1, 2, 3, 4}).String(); s != "1.2.3.4" {
 		t.Errorf("bad ObjectIdentifier.String(). Got %s, want 1.2.3.4", s)
+	}
+	oid, err := NewObjectIdentifier("{iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs-9(9) messageDigest(4)}")
+	if err != nil {
+		t.Errorf("Unable to parse ASN.1 string: %v", err)
+	}
+	if s := oid.String(); s != "1.2.840.113549.1.9.4" {
+		t.Errorf("bad ObjectIdentifier.String() from ASN.1 format. Got %s, want 1.2.840.113549.1.9.4", s)
 	}
 }
 

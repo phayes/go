@@ -25,6 +25,7 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 	"unicode/utf8"
 )
@@ -210,6 +211,38 @@ func parseBitString(bytes []byte) (ret BitString, err error) {
 
 // An ObjectIdentifier represents an ASN.1 OBJECT IDENTIFIER.
 type ObjectIdentifier []int
+
+// NewObjectIdentifier creates an object identifier from it's string representation.
+// Supports ASN.1 notation and dot notation. OID-IRI notation is not supported.
+func NewObjectIdentifier(oid string) (oi ObjectIdentifier, err error) {
+	if len(oid) == 0 {
+		return nil, errors.New("zero length OBJECT IDENTIFIER")
+	}
+
+	if oid[0] == '{' {
+		// ASN.1 notation. (eg {iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs-9(9) messageDigest(4)})
+		parts := strings.Split(oid[1:len(oid)-1], " ")
+		oi = make(ObjectIdentifier, len(parts), len(parts))
+		for i, part := range parts {
+			idx := strings.IndexRune(part, '(')
+			oi[i], err = strconv.Atoi(part[idx+1 : len(part)-1])
+			if err != nil {
+				return
+			}
+		}
+	} else {
+		// Dot notation. (eg 1.2.840.113549.1.9.4)
+		parts := strings.Split(oid, ".")
+		oi = make(ObjectIdentifier, len(parts), len(parts))
+		for i, part := range parts {
+			oi[i], err = strconv.Atoi(part)
+			if err != nil {
+				return
+			}
+		}
+	}
+	return oi, nil
+}
 
 // Equal reports whether oi and other represent the same identifier.
 func (oi ObjectIdentifier) Equal(other ObjectIdentifier) bool {
